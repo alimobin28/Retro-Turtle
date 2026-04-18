@@ -1,0 +1,14 @@
+pen_down
+color green
+forward 100
+left 90
+forward 100
+left 90
+repeat 4
+    forward 50
+    right 90
+end
+color red
+backward 30
+pen_up
+move 10 20
