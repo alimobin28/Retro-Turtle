@@ -1,0 +1,6 @@
+# test_missing_end.rt — should trigger ParseError (missing 'end')
+repeat 3
+    forward 50
+    right 90
+# 'end' is deliberately missing
+pen_down

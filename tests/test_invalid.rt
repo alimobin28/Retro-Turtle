@@ -1,0 +1,9 @@
+pen_down
+color green
+FoRwArD 100
+LEFT 90
+forward 99abc
+repeat 3
+    right 45
+end
+@ invalid_token

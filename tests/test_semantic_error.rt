@@ -1,0 +1,8 @@
+# test_semantic_error.rt
+# SemanticError: repeat count of 0 is not allowed
+pen_down
+color red
+repeat 0
+    forward 50
+    right 90
+end

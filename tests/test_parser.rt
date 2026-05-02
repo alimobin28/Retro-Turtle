@@ -1,0 +1,18 @@
+# test_parser.rt — tests nested loops and all commands
+pen_down
+color blue
+move 0 0
+repeat 4
+    forward 80
+    right 90
+end
+repeat 2
+    color red
+    forward 40
+    left 45
+    repeat 3
+        forward 10
+        right 120
+    end
+end
+pen_up
