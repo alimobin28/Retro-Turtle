@@ -1,0 +1,15 @@
+# test2.rt — Spiral-like pattern using nested repeats
+# Expected output: a star/spiral shape drawn in blue then magenta
+pen_down
+color blue
+repeat 6
+    forward 80
+    right 60
+end
+move 0 0
+color magenta
+repeat 3
+    forward 60
+    left 120
+end
+pen_up

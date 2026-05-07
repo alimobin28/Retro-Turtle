@@ -1,32 +1,72 @@
-# 🐢 RetroTurtle — DSL Lexer
+# 🐢 RetroTurtle — Mini Compiler
 
-A clean, modular lexer implementing the **Lexical Analysis** phase of a mini-compiler for the RetroTurtle drawing DSL.
+A complete compiler for the **RetroTurtle** drawing DSL (`.rt` files), built in Python.  
+Draws turtle-graphics shapes from a simple, readable scripting language.
 
 ---
 
 ## Project Structure
 
 ```
-RetroTurtle/
-│
+Retro-Turtle/
+├── main.py                        # Entry point — full CLI
 ├── src/
-│   └── lexer/
-│       ├── lexer.py      # Core Lexer class + LexerError
-│       ├── token.py      # TokenType enum + Token dataclass
-│       └── utils.py      # Keyword/color sets + char-class helpers
-│
+│   ├── repl.py                    # Interactive REPL mode
+│   ├── lexer/
+│   │   ├── lexer.py               # Phase 1: Lexical Analysis
+│   │   ├── token.py               # Token definitions
+│   │   └── utils.py               # Keyword/color sets, char helpers
+│   ├── parser/
+│   │   ├── parser.py              # Phase 2: Recursive Descent Parser
+│   │   └── ast_nodes.py           # AST node dataclasses
+│   └── backend/
+│       ├── semantic.py            # Phase 3: Semantic Analysis + Symbol Table
+│       ├── ir_generator.py        # Phase 4: IR Generation (loop unrolling)
+│       ├── optimizer.py           # Phase 5: Dead-Code Elim + Peephole Opt
+│       └── executor.py            # Phase 6: Turtle Graphics Execution
 ├── tests/
-│   ├── test1.rt          # Valid sample program
-│   └── test_invalid.rt   # Program with intentional errors
-│
+│   ├── test1.rt                   # Valid: basic moves + loop
+│   ├── test2.rt                   # Valid: hexagon star + triangle
+│   ├── test3.rt                   # Valid: house shape
+│   ├── test4_optimizer.rt         # Valid: optimizer stress test
+│   ├── test5.rt                   # Valid: nested loops (flower)
+│   ├── test_invalid.rt            # Error: bad lexer tokens
+│   ├── test_missing_end.rt        # Error: missing 'end' keyword
+│   └── test_semantic_error.rt     # Error: repeat count = 0
 ├── docs/
-│   └── token_spec.md     # Token definition table + DFA sketch
-│
-├── output/
-│   └── tokens.txt        # Generated token list (via --output flag)
-│
-├── main.py               # Entry point
-└── README.md
+│   ├── grammar.md                 # CFG grammar + FIRST/FOLLOW sets
+│   ├── token_spec.md              # Lexical token specification
+│   ├── backend_design.md          # IR design + semantic rules doc
+│   └── test_suite.md              # All tests with expected outputs
+└── output/
+    ├── program.ir                 # Generated IR (--save-ir)
+    └── tokens.txt                 # Token list (--output)
+```
+
+---
+
+## Compilation Pipeline
+
+```
+.rt source
+    │
+    ▼
+[Phase 1] Lexer          → Token list
+    │
+    ▼
+[Phase 2] Parser         → Abstract Syntax Tree (AST)
+    │
+    ▼
+[Phase 3] Semantic       → Validated AST + Symbol Table
+    │
+    ▼
+[Phase 4] IR Generator   → Flat IR instructions (loops unrolled)
+    │
+    ▼
+[Phase 5] Optimizer      → Optimized IR (DCE + Peephole)
+    │
+    ▼
+[Phase 6] Executor       → Turtle Graphics Window / PNG
 ```
 
 ---
@@ -34,83 +74,105 @@ RetroTurtle/
 ## Usage
 
 ```bash
-# Normal mode (lexes silently, prints summary)
+# Full pipeline (opens drawing window)
 python main.py tests/test1.rt
 
-# Debug mode — prints every token as <TYPE, VALUE, LINE>
+# Compile to IR file (-o flag)
+python main.py tests/test1.rt -o output/result.ir
+
+# Show all intermediate representations
 python main.py tests/test1.rt --debug
 
-# Save tokens to output/tokens.txt
-python main.py tests/test1.rt --output
+# Stop after IR generation (print IR listing)
+python main.py tests/test1.rt --ir-only
 
-# Combine flags
-python main.py tests/test1.rt --debug --output
+# Stop after lexing (print token count)
+python main.py tests/test1.rt --lex-only
+
+# Save drawing as PNG (requires Pillow)
+python main.py tests/test1.rt --save-png
+
+# Save IR to output/program.ir
+python main.py tests/test1.rt --save-ir
+
+# Skip optimization phase
+python main.py tests/test1.rt --no-opt
+
+# Interactive REPL mode
+python main.py --interactive
 ```
 
 ---
 
-## Token Types
+## Language Quick Reference
 
-| Type         | Example              |
-|--------------|----------------------|
-| `KEYWORD`    | `forward`, `repeat`  |
-| `IDENTIFIER` | `x`, `size`          |
-| `NUMBER`     | `90`, `100`          |
-| `COLOR`      | `red`, `green`       |
-| `NEWLINE`    | `\n`                 |
-| `EOF`        | *(end of file)*      |
+| Command         | Syntax                  | Description                          |
+|-----------------|-------------------------|--------------------------------------|
+| `forward`       | `forward N`             | Move forward N pixels                |
+| `backward`      | `backward N`            | Move backward N pixels               |
+| `left`          | `left N`                | Turn left N degrees                  |
+| `right`         | `right N`               | Turn right N degrees                 |
+| `pen_up`        | `pen_up`                | Lift pen (move without drawing)      |
+| `pen_down`      | `pen_down`              | Lower pen (draw on move)             |
+| `color`         | `color red`             | Set pen color                        |
+| `move`          | `move X Y`              | Jump to coordinates (X, Y)           |
+| `repeat`/`end`  | `repeat N ... end`      | Repeat block N times (nestable)      |
+| `#`             | `# comment`             | Single-line comment                  |
 
-See [`docs/token_spec.md`](docs/token_spec.md) for the full specification and DFA.
-
----
-
-## Sample Programs
-
-### Valid (`tests/test1.rt`)
-
-```
-pen_down
-color green
-forward 100
-left 90
-repeat 4
-    forward 50
-    right 90
-end
-move 10 20
-```
-
-### Invalid (`tests/test_invalid.rt`)
-
-```
-forward 99abc   # ← invalid number
-@ invalid_token  # ← unrecognised character
-```
+**Supported colors:** `red green blue yellow orange purple black white cyan magenta pink brown`
 
 ---
 
-## Error Output Example
+## Optimization Examples
 
+Run `python main.py tests/test4_optimizer.rt --ir-only` to see:
+
+**Before optimization (10 instructions):**
 ```
-[Line 7, Col 11] LexerError: Invalid number: digit sequence followed by 'a'
+PEN_DOWN
+COLOR green     ← shadowed, never draws
+COLOR blue
+FORWARD 30      ← mergeable
+FORWARD 30      ← mergeable
+LEFT 45         ← cancels with RIGHT 45
+RIGHT 45        ← cancels with LEFT 45
+RIGHT 90
+FORWARD 50
+PEN_UP
+```
+
+**After optimization (6 instructions — 40% reduction):**
+```
+PEN_DOWN
+COLOR blue
+FORWARD 60
+RIGHT 90
+FORWARD 50
+PEN_UP
 ```
 
 ---
 
-## Language Rules
-
-- **Case-insensitive keywords** — `FoRwArD` → `<KEYWORD, forward>`
-- **Comments** — `#` to end-of-line are ignored
-- **Whitespace** — spaces and tabs between tokens are skipped
-- **Integers only** — floats and alphanumeric digit strings are rejected
-- **Blocks** — `repeat N ... end` defines a loop body
-
----
-
-## Running Tests
+## Error Messages
 
 ```bash
-# Quick smoke test for both files
-python main.py tests/test1.rt --debug
-python main.py tests/test_invalid.rt --debug
+# Lexer error
+[Line 5, Col 11] LexerError: Invalid number: digit sequence followed by 'a'
+
+# Parser error
+[Line 4] ParseError: 'repeat' block is not closed — expected 'end', got 'EOF'
+
+# Semantic error
+[Line 5] SemanticError: 'repeat' count must be a positive integer, got 0
 ```
+
+---
+
+## Dependencies
+
+| Library      | Required? | Purpose                        | Install              |
+|--------------|-----------|--------------------------------|----------------------|
+| Python 3.10+ | YES       | Core language                  | (system)             |
+| `turtle`     | YES       | Drawing engine (stdlib)        | built-in             |
+| `tkinter`    | YES       | Window/canvas backend (stdlib) | built-in             |
+| `Pillow`     | OPTIONAL  | PNG export from EPS canvas     | `pip install Pillow` |

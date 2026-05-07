@@ -1,0 +1,12 @@
+# test5.rt — Complex nested loop drawing (flower-like pattern)
+# Expected output: 4 "petals" each made of 3 forward-left steps, drawn in cyan
+pen_down
+color cyan
+repeat 4
+    repeat 3
+        forward 40
+        left 120
+    end
+    right 90
+end
+pen_up

@@ -1,0 +1,20 @@
+# test4_optimizer.rt — Optimizer stress test
+# Tests dead code elimination and peephole optimization
+#
+# Expected IR (before opt): ~14 instructions
+# Expected IR (after opt):  ~6 instructions (dead colors removed, moves merged)
+#
+# Optimizations triggered:
+#   - COLOR green shadowed by COLOR blue (DCE: removes COLOR green)
+#   - FORWARD 30 + FORWARD 30 merged into FORWARD 60 (peephole)
+#   - LEFT 45 + RIGHT 45 cancelled (peephole: net zero rotation)
+pen_down
+color green
+color blue
+forward 30
+forward 30
+left 45
+right 45
+right 90
+forward 50
+pen_up

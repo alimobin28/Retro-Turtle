@@ -1,0 +1,21 @@
+# test3.rt — Draw a simple house shape
+# Expected output: a square base + triangular roof drawn in two colors
+pen_down
+color orange
+# Draw square base
+repeat 4
+    forward 80
+    right 90
+end
+# Move to roof start
+pen_up
+move 0 80
+pen_down
+color red
+# Draw triangle roof
+forward 80
+right 120
+forward 80
+right 120
+forward 80
+pen_up
